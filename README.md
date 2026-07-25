@@ -63,11 +63,11 @@ GitHubの **Actions → Update OTS map → Run workflow** を実行します。
 
 ### 4. GitHub Pagesを公開
 
-リポジトリの **Settings → Pages** で以下を設定します。
+リポジトリの **Settings → Pages** で次を設定します。
 
-- Source: Deploy from a branch
-- Branch: `main`
-- Folder: `/docs`
+- Source: **GitHub Actions**
+
+日次更新ワークフローが、更新後の `docs` フォルダーをGitHub Pagesへ直接デプロイします。
 
 表示URLは通常、次の形式です。
 
