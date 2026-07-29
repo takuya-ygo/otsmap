@@ -12,21 +12,36 @@
     header { display: grid; gap: 12px; padding: 14px 16px; background: white; border-bottom: 1px solid #d9dde5; }
     h1 { margin: 0; font-size: 1.2rem; }
     .controls { display: grid; grid-template-columns: minmax(180px, 2fr) minmax(140px, 1fr) auto; gap: 8px; }
-.controls input,
-.controls select,
-.controls button {
-  min-height: 42px;
-  border: 1px solid #aeb5c1;
-  border-radius: 9px;
-  padding: 8px 10px;
-  font: inherit;
-  background: white;
-  color: inherit;
-}
+    .controls input,
+    .controls select,
+    .controls button {
+      min-height: 42px;
+      border: 1px solid #aeb5c1;
+      border-radius: 9px;
+      padding: 8px 10px;
+      font: inherit;
+      background: #ffffff;
+      color: #181a1f;
+    }
 
-.controls button {
-  cursor: pointer;
-}
+    .controls input::placeholder {
+      color: #687386;
+      opacity: 1;
+    }
+
+    .controls select option {
+      background: #ffffff;
+      color: #181a1f;
+    }
+
+    .controls button {
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .controls button:hover {
+      background: #eef1f5;
+    }
     .status { font-size: .88rem; color: #596273; }
     #map { width: 100%; height: calc(100vh - 142px); min-height: 480px; }
     .info { max-width: 320px; line-height: 1.5; }
@@ -41,37 +56,96 @@
     }
     @media (prefers-color-scheme: dark) {
       body { background: #111318; color: #f1f3f7; }
-      header, input, select, button { background: #1b1e25; }
-      header { border-color: #343944; }
+      header { background: #1b1e25; border-color: #343944; }
+
+      .controls input,
+      .controls select,
+      .controls button {
+        background: #1b1e25;
+        color: #f1f3f7;
+        border-color: #687181;
+        color-scheme: dark;
+      }
+
+      .controls input::placeholder {
+        color: #b5bdca;
+        opacity: 1;
+      }
+
+      .controls select option {
+        background: #1b1e25;
+        color: #f1f3f7;
+      }
+
+      .controls button:hover {
+        background: #292e38;
+      }
+
       .status { color: #b5bdca; }
-      .info a { color: #8ab4f8; }
       .error { background: #3a1e1e; color: #ffd1d1; }
     }
     /* Google Mapsの店舗情報ポップアップ */
-.info {
-  color: #202124;
-  background: #ffffff;
-  color-scheme: light;
-}
+    .info {
+      color: #202124;
+      background: #ffffff;
+      color-scheme: light;
+    }
 
-.info h2,
-.info p {
-  color: #202124;
-}
+    .info h2,
+    .info p {
+      color: #202124;
+    }
 
-.info a {
-  color: #0b57d0;
-  font-weight: 600;
-}
+    .info a {
+      color: #0b57d0;
+      font-weight: 600;
+    }
+
     /* Google Mapsポップアップの閉じるボタン */
-.gm-style button.gm-ui-hover-effect {
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  opacity: 1;
-}
+    .gm-style button.gm-ui-hover-effect {
+      position: relative !important;
+      width: 32px !important;
+      height: 32px !important;
+      min-height: 0 !important;
+      margin: 4px !important;
+      padding: 0 !important;
+      border: 1px solid #9aa0a6 !important;
+      border-radius: 50% !important;
+      background: #ffffff !important;
+      box-shadow: 0 1px 3px rgba(60, 64, 67, 0.35) !important;
+      opacity: 1 !important;
+    }
+
+    .gm-style button.gm-ui-hover-effect:hover {
+      background: #f1f3f4 !important;
+    }
+
+    /* Google側のアイコン表示方式に依存せず、×を確実に表示 */
+    .gm-style button.gm-ui-hover-effect > span,
+    .gm-style button.gm-ui-hover-effect > img {
+      opacity: 0 !important;
+    }
+
+    .gm-style button.gm-ui-hover-effect::before,
+    .gm-style button.gm-ui-hover-effect::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 15px;
+      height: 2px;
+      border-radius: 1px;
+      background: #202124;
+      pointer-events: none;
+    }
+
+    .gm-style button.gm-ui-hover-effect::before {
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    .gm-style button.gm-ui-hover-effect::after {
+      transform: translate(-50%, -50%) rotate(-45deg);
+    }
   </style>
 </head>
 <body>
