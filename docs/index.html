@@ -12,8 +12,21 @@
     header { display: grid; gap: 12px; padding: 14px 16px; background: white; border-bottom: 1px solid #d9dde5; }
     h1 { margin: 0; font-size: 1.2rem; }
     .controls { display: grid; grid-template-columns: minmax(180px, 2fr) minmax(140px, 1fr) auto; gap: 8px; }
-    input, select, button { min-height: 42px; border: 1px solid #aeb5c1; border-radius: 9px; padding: 8px 10px; font: inherit; background: white; color: inherit; }
-    button { cursor: pointer; }
+.controls input,
+.controls select,
+.controls button {
+  min-height: 42px;
+  border: 1px solid #aeb5c1;
+  border-radius: 9px;
+  padding: 8px 10px;
+  font: inherit;
+  background: white;
+  color: inherit;
+}
+
+.controls button {
+  cursor: pointer;
+}
     .status { font-size: .88rem; color: #596273; }
     #map { width: 100%; height: calc(100vh - 142px); min-height: 480px; }
     .info { max-width: 320px; line-height: 1.5; }
@@ -49,6 +62,15 @@
 .info a {
   color: #0b57d0;
   font-weight: 600;
+}
+    /* Google Mapsポップアップの閉じるボタン */
+.gm-style button.gm-ui-hover-effect {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  opacity: 1;
 }
   </style>
 </head>
