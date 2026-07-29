@@ -5,12 +5,19 @@
     ],
     "fetchedAt": "2026-07-29T14:13:01.499Z",
     "count": 961,
-    "note": "KONAMI CARD GAME NETWORKの公開検索画面から自動取得。公開・転載は権利者の許可条件を確認してください。",
-    "mapReadyAt": "2026-07-29T14:13:03.680Z",
-    "mappableCount": 960,
-    "unresolvedCount": 1
+    "note": "KONAMI CARD GAME NETWORKの公開検索画面から自動取得。公開・転載は権利者の許可条件を確認してください。"
   },
   "stores": [
+    {
+      "storeId": "470714JP",
+      "name": "遊戯王カードゲームインストラクター",
+      "postalCode": "0",
+      "address": "0 その他イベント毎の開催会場情報をご確認ください_ 遊戯王カードゲームインストラクター",
+      "officialUrl": "https://cardgame-network.konami.net/store/detail/470714JP/ja",
+      "sourceUrl": "https://cardgame-network.konami.net/mt/user/rest/store/JP/searchStores",
+      "prefecture": "",
+      "updatedAt": "2026-07-29T14:13:01.499Z"
+    },
     {
       "storeId": "470255JP",
       "name": "トレカチャンピオン 豊橋牛川店",
@@ -6198,10 +6205,7 @@
       "prefecture": "静岡県",
       "officialUrl": "https://cardgame-network.konami.net/store/detail/470988JP/ja",
       "sourceUrl": "https://cardgame-network.konami.net/mt/user/rest/store/JP/searchStores",
-      "updatedAt": "2026-07-29T14:13:01.499Z",
-      "latitude": 35.0794272,
-      "longitude": 138.9361668,
-      "geocodeSource": "Google Geocoding API"
+      "updatedAt": "2026-07-29T14:13:01.499Z"
     },
     {
       "storeId": "220059JP",
@@ -8731,10 +8735,7 @@
       "prefecture": "東京都",
       "officialUrl": "https://cardgame-network.konami.net/store/detail/470870JP/ja",
       "sourceUrl": "https://cardgame-network.konami.net/mt/user/rest/store/JP/searchStores",
-      "updatedAt": "2026-07-29T14:13:01.499Z",
-      "latitude": 35.6694655,
-      "longitude": 139.7642496,
-      "geocodeSource": "Google Geocoding API"
+      "updatedAt": "2026-07-29T14:13:01.499Z"
     },
     {
       "storeId": "470869JP",
@@ -8744,10 +8745,7 @@
       "prefecture": "東京都",
       "officialUrl": "https://cardgame-network.konami.net/store/detail/470869JP/ja",
       "sourceUrl": "https://cardgame-network.konami.net/mt/user/rest/store/JP/searchStores",
-      "updatedAt": "2026-07-29T14:13:01.499Z",
-      "latitude": 35.6694655,
-      "longitude": 139.7642496,
-      "geocodeSource": "Google Geocoding API"
+      "updatedAt": "2026-07-29T14:13:01.499Z"
     },
     {
       "storeId": "470717JP",

@@ -1,0 +1,30 @@
+{
+  "0 その他イベント毎の開催会場情報をご確認ください_ 遊戯王カードゲームインストラクター": {
+    "latitude": null,
+    "longitude": null,
+    "status": "ZERO_RESULTS",
+    "checkedAt": "2026-07-29T14:13:02.570Z",
+    "source": "Google Geocoding API"
+  },
+  "419-0124 静岡県田方郡函南町塚本143-1 TSUTAYA 函南店": {
+    "latitude": 35.0794272,
+    "longitude": 138.9361668,
+    "status": "OK",
+    "checkedAt": "2026-07-29T14:13:02.889Z",
+    "source": "Google Geocoding API"
+  },
+  "104-0061 東京都中央区銀座6丁目 コナミデジタルエンタテインメント(DF)": {
+    "latitude": 35.6694655,
+    "longitude": 139.7642496,
+    "status": "OK",
+    "checkedAt": "2026-07-29T14:13:03.237Z",
+    "source": "Google Geocoding API"
+  },
+  "104-0061 東京都中央区銀座6丁目 コナミデジタルエンタテインメント(チーム戦)": {
+    "latitude": 35.6694655,
+    "longitude": 139.7642496,
+    "status": "OK",
+    "checkedAt": "2026-07-29T14:13:03.558Z",
+    "source": "Google Geocoding API"
+  }
+}
