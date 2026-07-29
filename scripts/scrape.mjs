@@ -36,7 +36,14 @@ page.on('response', async (response) => {
     const json = JSON.parse(body.toString('utf8'));
     const found = findStoreCandidates(json, response.url());
     if (found.length) stores.push(...found);
-    networkLog.push({ url: response.url(), status: response.status(), candidates: found.length });
+    const request = response.request();
+    networkLog.push({
+      method: request.method(),
+      url: response.url(),
+      status: response.status(),
+      candidates: found.length,
+      postData: sanitizePostData(request.postData())
+    });
   } catch {
     // Some endpoints label non-JSON content as JSON. Ignore them.
   }
@@ -48,13 +55,11 @@ try {
 
   for (const startUrl of startUrls) {
     console.log(`取得を試行: ${startUrl}`);
-    await page.goto(startUrl, { waitUntil: 'domcontentloaded', timeout: 90_000 });
-    await settle(page, Number(config.settleMilliseconds ?? 4000));
-    await dismissDialogs(page);
-    await chooseJapan(page);
+    await openStoreSearch(page, startUrl, Number(config.settleMilliseconds ?? 4000));
     await triggerSearch(page);
     await settle(page, Number(config.settleMilliseconds ?? 4000));
     await collectDomStores(page, stores, Number(config.maxPaginationSteps ?? 250));
+    console.log(`現在の取得件数: ${dedupeStores(stores).length}`);
     if (dedupeStores(stores).length >= minimumStoreCount) break;
   }
 
@@ -90,10 +95,67 @@ try {
   await browser.close();
 }
 
+async function openStoreSearch(page, startUrl, settleMilliseconds) {
+  await page.goto(startUrl, { waitUntil: 'domcontentloaded', timeout: 90_000 });
+  await settle(page, settleMilliseconds);
+  await dismissCookieBanner(page);
+
+  if (await isCountrySelectionPage(page)) {
+    console.log(`サービス対応地域選択画面を検出: ${page.url()}`);
+    await chooseJapan(page);
+    await settle(page, 2500);
+    await dismissDialogs(page);
+
+    // 国・地域の設定は同じブラウザーコンテキストのCookie等へ保存される。
+    // 設定後に検索URLを明示的に開き直さないと、worldmap画面に残る場合がある。
+    console.log('日本を設定後、店舗検索画面を開き直します。');
+    await page.goto(startUrl, { waitUntil: 'domcontentloaded', timeout: 90_000 });
+    await settle(page, settleMilliseconds);
+    await dismissCookieBanner(page);
+    await dismissDialogs(page);
+  } else {
+    await dismissDialogs(page);
+  }
+
+  if (await isCountrySelectionPage(page)) {
+    throw new Error(
+      `日本の地域設定後も店舗検索へ進めませんでした。現在URL: ${page.url()}`
+    );
+  }
+  console.log(`店舗検索画面を表示: ${page.url()}`);
+}
+
+async function isCountrySelectionPage(page) {
+  const japanButton = page.locator('#jpn a.area-btn').filter({ hasText: /日本|Japan/i }).first();
+  if (await japanButton.isVisible().catch(() => false)) return true;
+  return /\/worldmap(?:$|[?#])/i.test(new URL(page.url()).pathname + new URL(page.url()).search + new URL(page.url()).hash);
+}
+
+async function dismissCookieBanner(page) {
+  // OneTrustのバナーがクリックを遮るため、まず「すべて拒否」を選ぶ。
+  // 表示言語等により拒否ボタンがない場合だけ許可ボタンも候補にする。
+  const patterns = [
+    /^(すべて拒否|全て拒否|Reject All|Reject all)$/i,
+    /^(すべて許可|全て許可|Accept All|Accept all)$/i
+  ];
+  for (const pattern of patterns) {
+    const buttons = page.getByRole('button', { name: pattern });
+    for (let index = 0; index < await buttons.count(); index += 1) {
+      const button = buttons.nth(index);
+      if (await button.isVisible().catch(() => false)) {
+        await button.click({ timeout: 5000 }).catch(() => {});
+        await page.waitForTimeout(700);
+        return;
+      }
+    }
+  }
+}
+
 async function dismissDialogs(page) {
   const labels = [
-    '同意する','確認しました','閉じる','OK','次へ','日本','Japan',
-    'Agree','Accept','Confirm','Close','Continue'
+    '確認しました','閉じる','OK','次へ',
+    'Agree','Accept','Confirm','Close','Continue',
+    '同意する'
   ];
   for (let round = 0; round < 8; round += 1) {
     let clicked = false;
@@ -105,7 +167,7 @@ async function dismissDialogs(page) {
         if (await button.isVisible().catch(() => false)) {
           await button.click({ timeout: 3000 }).catch(() => {});
           clicked = true;
-          await page.waitForTimeout(500);
+          await page.waitForTimeout(700);
         }
       }
     }
@@ -114,26 +176,26 @@ async function dismissDialogs(page) {
 }
 
 async function chooseJapan(page) {
-  const selects = page.locator('select');
-  for (let index = 0; index < await selects.count(); index += 1) {
-    const select = selects.nth(index);
-    const options = await select.locator('option').allTextContents().catch(() => []);
-    const japanIndex = options.findIndex((text) => /日本|Japan/i.test(text));
-    if (japanIndex >= 0) {
-      const option = select.locator('option').nth(japanIndex);
-      const value = await option.getAttribute('value');
-      if (value !== null) await select.selectOption(value).catch(() => {});
-    }
+  const selector = page.locator('#jpn a.area-btn').filter({ hasText: /日本|Japan/i }).first();
+  if (!await selector.isVisible().catch(() => false)) {
+    throw new Error('サービス対応地域選択画面で「日本」ボタンが見つかりませんでした。');
   }
 
-  const japanText = page.getByText(/^(日本|Japan)$/i, { exact: true });
-  for (let index = 0; index < Math.min(await japanText.count(), 5); index += 1) {
-    const target = japanText.nth(index);
-    if (await target.isVisible().catch(() => false)) {
-      await target.click({ timeout: 3000 }).catch(() => {});
-      await page.waitForTimeout(700);
-    }
-  }
+  const settingResponse = page.waitForResponse((response) =>
+    response.url().includes('/mt/user/rest/user-setting/') && response.status() >= 200 && response.status() < 300,
+  { timeout: 15_000 }).catch(() => null);
+
+  await selector.scrollIntoViewIfNeeded().catch(() => {});
+  await selector.click({ timeout: 10_000, force: true });
+  await page.waitForTimeout(800);
+
+  // 初回アクセス時に規約・プライバシー確認が開く場合がある。
+  await dismissDialogs(page);
+  const response = await settingResponse;
+  console.log(response
+    ? `日本の地域設定レスポンス: HTTP ${response.status()}`
+    : '日本ボタンをクリックしました（地域設定レスポンスは待機時間内に確認できませんでした）。');
+  await page.waitForTimeout(1800);
 }
 
 async function triggerSearch(page) {
@@ -231,6 +293,15 @@ async function saveDiagnostics(page, networkLog, stores, reason) {
   await fs.writeFile(path.join(ROOT, 'artifacts/store-search.html'), await page.content(), 'utf8').catch(() => {});
   await writeJson(path.join(ROOT, 'artifacts/network-summary.json'), networkLog);
   await writeJson(path.join(ROOT, 'artifacts/partial-stores.json'), { reason, count: stores.length, stores });
+}
+
+function sanitizePostData(value) {
+  if (!value) return null;
+  const text = String(value);
+  // 診断に必要な範囲だけ保存し、長大なデータや認証情報らしき値を避ける。
+  return text
+    .replace(/("?(?:token|password|authorization|secret|apiKey)"?\s*[:=]\s*)"?[^",&\s]+/gi, '$1"***"')
+    .slice(0, 2000);
 }
 
 function escapeRegex(value) {
