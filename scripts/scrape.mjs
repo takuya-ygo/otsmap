@@ -56,8 +56,10 @@ try {
   for (const startUrl of startUrls) {
     console.log(`取得を試行: ${startUrl}`);
     await openStoreSearch(page, startUrl, Number(config.settleMilliseconds ?? 4000));
+    await saveStageDiagnostics(page, `before-search-${safeFilePart(new URL(startUrl).pathname)}`);
     await triggerSearch(page);
     await settle(page, Number(config.settleMilliseconds ?? 4000));
+    await saveStageDiagnostics(page, `after-search-${safeFilePart(new URL(startUrl).pathname)}`);
     await collectDomStores(page, stores, Number(config.maxPaginationSteps ?? 250));
     console.log(`現在の取得件数: ${dedupeStores(stores).length}`);
     if (dedupeStores(stores).length >= minimumStoreCount) break;
@@ -152,24 +154,42 @@ async function dismissCookieBanner(page) {
 }
 
 async function dismissDialogs(page) {
-  const labels = [
-    '確認しました','閉じる','OK','次へ',
-    'Agree','Accept','Confirm','Close','Continue',
-    '同意する'
+  // このサイトの同意ボタンは <button> だけでなく <a class="yes-btn"> でも実装される。
+  // role=button のみでは初回同意画面を処理できないため、リンクとinputも対象にする。
+  const agreeLabels = [
+    '同意する', '確認しました', 'OK', '次へ', '閉じる',
+    'Agree', 'Accept', 'Confirm', 'Continue', 'Close'
   ];
-  for (let round = 0; round < 8; round += 1) {
+
+  for (let round = 0; round < 12; round += 1) {
     let clicked = false;
-    for (const label of labels) {
-      const locator = page.getByRole('button', { name: new RegExp(`^${escapeRegex(label)}$`, 'i') });
-      const count = await locator.count();
-      for (let index = 0; index < Math.min(count, 3); index += 1) {
-        const button = locator.nth(index);
-        if (await button.isVisible().catch(() => false)) {
-          await button.click({ timeout: 3000 }).catch(() => {});
-          clicked = true;
-          await page.waitForTimeout(700);
+    for (const label of agreeLabels) {
+      const candidates = [
+        page.getByRole('button', { name: new RegExp(`^${escapeRegex(label)}$`, 'i') }),
+        page.getByRole('link', { name: new RegExp(`^${escapeRegex(label)}$`, 'i') }),
+        page.locator(`input[type="button"], input[type="submit"]`).filter({
+          has: page.locator(`xpath=.[@value=${xpathLiteral(label)}]`)
+        })
+      ];
+
+      for (const locator of candidates) {
+        const count = await locator.count().catch(() => 0);
+        for (let index = 0; index < Math.min(count, 5); index += 1) {
+          const control = locator.nth(index);
+          if (!await control.isVisible().catch(() => false)) continue;
+          await control.scrollIntoViewIfNeeded().catch(() => {});
+          const didClick = await control.click({ timeout: 4000, force: true })
+            .then(() => true)
+            .catch(() => false);
+          if (didClick) {
+            clicked = true;
+            await page.waitForTimeout(900);
+            break;
+          }
         }
+        if (clicked) break;
       }
+      if (clicked) break;
     }
     if (!clicked) break;
   }
@@ -199,18 +219,102 @@ async function chooseJapan(page) {
 }
 
 async function triggerSearch(page) {
-  const patterns = [/検索/, /Search/i, /この条件/, /絞り込/];
-  for (const pattern of patterns) {
-    const buttons = page.getByRole('button', { name: pattern });
-    for (let index = 0; index < await buttons.count(); index += 1) {
-      const button = buttons.nth(index);
-      if (await button.isVisible().catch(() => false)) {
-        await button.click({ timeout: 5000 }).catch(() => {});
-        await page.waitForTimeout(1000);
-        return;
-      }
+  await ensureStoreSearchRoute(page);
+  await dismissDialogs(page);
+
+  const controls = await describeVisibleControls(page);
+  await writeJson(path.join(ROOT, 'artifacts/store-controls.json'), {
+    url: page.url(),
+    capturedAt: new Date().toISOString(),
+    controls
+  });
+
+  const exactPatterns = [
+    /^(この条件で検索|条件を指定して検索|検索する|検索|Search)$/i
+  ];
+
+  const candidateLocators = [];
+  for (const pattern of exactPatterns) {
+    candidateLocators.push(page.getByRole('button', { name: pattern }));
+    candidateLocators.push(page.getByRole('link', { name: pattern }));
+  }
+  candidateLocators.push(page.locator('input[type="submit"], input[type="button"]').filter({ hasText: /検索|Search/i }));
+  candidateLocators.push(page.locator('[ng-click*="search" i], [data-ng-click*="search" i]'));
+
+  for (const locator of candidateLocators) {
+    const count = await locator.count().catch(() => 0);
+    for (let index = 0; index < Math.min(count, 10); index += 1) {
+      const candidate = locator.nth(index);
+      if (!await candidate.isVisible().catch(() => false)) continue;
+
+      const href = await candidate.getAttribute('href').catch(() => null);
+      const aria = await candidate.getAttribute('aria-label').catch(() => null);
+      // 左メニューの「店舗検索」は検索実行ボタンではない。
+      if (href === '/store_search' || aria === '店舗検索') continue;
+
+      const label = normalizeSpace(
+        await candidate.innerText().catch(async () =>
+          await candidate.getAttribute('value').catch(() => '')
+        )
+      );
+      console.log(`検索操作を実行: ${label || await candidate.getAttribute('ng-click').catch(() => '')}`);
+      await candidate.scrollIntoViewIfNeeded().catch(() => {});
+      const clicked = await candidate.click({ timeout: 7000, force: true })
+        .then(() => true)
+        .catch(() => false);
+      if (!clicked) continue;
+      await page.waitForTimeout(1800);
+      await dismissDialogs(page);
+      return;
     }
   }
+
+  throw new Error(
+    '店舗検索の実行ボタンが見つかりませんでした。artifacts/store-controls.json と before-search の画面を確認してください。'
+  );
+}
+
+async function ensureStoreSearchRoute(page) {
+  const pathname = new URL(page.url()).pathname;
+  if (pathname === '/store_search') return;
+
+  const menuLink = page.locator('a[href="/store_search"]').first();
+  if (await menuLink.isVisible().catch(() => false)) {
+    await menuLink.click({ timeout: 7000, force: true });
+    await page.waitForTimeout(1500);
+  } else {
+    await page.goto('https://cardgame-network.konami.net/store_search?languageCode=ja', {
+      waitUntil: 'domcontentloaded',
+      timeout: 90_000
+    });
+    await settle(page, 2500);
+  }
+  await dismissDialogs(page);
+
+  if (new URL(page.url()).pathname !== '/store_search') {
+    throw new Error(`店舗検索画面へ移動できませんでした。現在URL: ${page.url()}`);
+  }
+}
+
+async function describeVisibleControls(page) {
+  return await page.locator('button, a, input, select, textarea').evaluateAll((elements) =>
+    elements
+      .filter((element) => {
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.visibility !== 'hidden' && style.display !== 'none' && rect.width > 0 && rect.height > 0;
+      })
+      .map((element) => ({
+        tag: element.tagName.toLowerCase(),
+        type: element.getAttribute('type'),
+        text: (element.innerText || element.value || element.getAttribute('aria-label') || '').trim().slice(0, 240),
+        href: element.getAttribute('href'),
+        id: element.id || null,
+        name: element.getAttribute('name'),
+        ngClick: element.getAttribute('ng-click') || element.getAttribute('data-ng-click'),
+        model: element.getAttribute('ng-model') || element.getAttribute('data-ng-model')
+      }))
+  ).catch(() => []);
 }
 
 async function collectDomStores(page, stores, maxSteps) {
@@ -302,6 +406,30 @@ function sanitizePostData(value) {
   return text
     .replace(/("?(?:token|password|authorization|secret|apiKey)"?\s*[:=]\s*)"?[^",&\s]+/gi, '$1"***"')
     .slice(0, 2000);
+}
+
+async function saveStageDiagnostics(page, name) {
+  await fs.mkdir(path.join(ROOT, 'artifacts'), { recursive: true });
+  const safeName = safeFilePart(name);
+  await page.screenshot({
+    path: path.join(ROOT, `artifacts/${safeName}.png`),
+    fullPage: true
+  }).catch(() => {});
+  await fs.writeFile(
+    path.join(ROOT, `artifacts/${safeName}.html`),
+    await page.content(),
+    'utf8'
+  ).catch(() => {});
+}
+
+function safeFilePart(value) {
+  return String(value || 'page').replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'page';
+}
+
+function xpathLiteral(value) {
+  if (!String(value).includes("'")) return `'${value}'`;
+  if (!String(value).includes('"')) return `"${value}"`;
+  return `concat('${String(value).replace(/'/g, `', "'", '`)}')`;
 }
 
 function escapeRegex(value) {
