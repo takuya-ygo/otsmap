@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>遊戯王 OTS マップ</title>
+  <meta name="description" content="遊戯王オフィシャルトーナメントストアの検索マップ">
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f5f6f8; color: #181a1f; }
+    header { display: grid; gap: 12px; padding: 14px 16px; background: white; border-bottom: 1px solid #d9dde5; }
+    h1 { margin: 0; font-size: 1.2rem; }
+    .controls { display: grid; grid-template-columns: minmax(180px, 2fr) minmax(140px, 1fr) auto; gap: 8px; }
+    .controls input,
+    .controls select,
+    .controls button {
+      min-height: 42px;
+      border: 1px solid #aeb5c1;
+      border-radius: 9px;
+      padding: 8px 10px;
+      font: inherit;
+      background: #ffffff;
+      color: #181a1f;
+    }
+
+    .controls input::placeholder {
+      color: #687386;
+      opacity: 1;
+    }
+
+    .controls select option {
+      background: #ffffff;
+      color: #181a1f;
+    }
+
+    .controls button {
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .controls button:hover {
+      background: #eef1f5;
+    }
+    .status { font-size: .88rem; color: #596273; }
+    #map { width: 100%; height: calc(100vh - 142px); min-height: 480px; }
+    .info { max-width: 320px; line-height: 1.5; }
+    .info h2 { margin: 0 0 6px; font-size: 1rem; }
+    .info p { margin: 4px 0; }
+    .info a { color: #1358bf; }
+    .error { padding: 20px; background: #fff3f3; color: #8b1a1a; }
+    @media (max-width: 680px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .controls input { grid-column: 1 / -1; }
+      #map { height: calc(100vh - 196px); }
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #111318; color: #f1f3f7; }
+      header { background: #1b1e25; border-color: #343944; }
+
+      .controls input,
+      .controls select,
+      .controls button {
+        background: #1b1e25;
+        color: #f1f3f7;
+        border-color: #687181;
+        color-scheme: dark;
+      }
+
+      .controls input::placeholder {
+        color: #b5bdca;
+        opacity: 1;
+      }
+
+      .controls select option {
+        background: #1b1e25;
+        color: #f1f3f7;
+      }
+
+      .controls button:hover {
+        background: #292e38;
+      }
+
+      .status { color: #b5bdca; }
+      .error { background: #3a1e1e; color: #ffd1d1; }
+    }
+    /* Google Mapsの店舗情報ポップアップ */
+    .info {
+      color: #202124;
+      background: #ffffff;
+      color-scheme: light;
+    }
+
+    .info h2,
+    .info p {
+      color: #202124;
+    }
+
+    .info a {
+      color: #0b57d0;
+      font-weight: 600;
+    }
+
+    /* Google Mapsポップアップの閉じるボタン */
+    .gm-style button.gm-ui-hover-effect {
+      position: relative !important;
+      width: 32px !important;
+      height: 32px !important;
+      min-height: 0 !important;
+      margin: 4px !important;
+      padding: 0 !important;
+      border: 1px solid #9aa0a6 !important;
+      border-radius: 50% !important;
+      background: #ffffff !important;
+      box-shadow: 0 1px 3px rgba(60, 64, 67, 0.35) !important;
+      opacity: 1 !important;
+    }
+
+    .gm-style button.gm-ui-hover-effect:hover {
+      background: #f1f3f4 !important;
+    }
+
+    /* Google側のアイコン表示方式に依存せず、×を確実に表示 */
+    .gm-style button.gm-ui-hover-effect > span,
+    .gm-style button.gm-ui-hover-effect > img {
+      opacity: 0 !important;
+    }
+
+    .gm-style button.gm-ui-hover-effect::before,
+    .gm-style button.gm-ui-hover-effect::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 15px;
+      height: 2px;
+      border-radius: 1px;
+      background: #202124;
+      pointer-events: none;
+    }
+
+    .gm-style button.gm-ui-hover-effect::before {
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    .gm-style button.gm-ui-hover-effect::after {
+      transform: translate(-50%, -50%) rotate(-45deg);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>遊戯王 オフィシャルトーナメントストア マップ</h1>
+    <div class="controls">
+      <input id="query" type="search" placeholder="店舗名・住所で検索" aria-label="店舗名・住所で検索">
+      <select id="prefecture" aria-label="都道府県"><option value="">すべての都道府県</option></select>
+      <button id="reset" type="button">表示をリセット</button>
+    </div>
+    <div id="status" class="status" aria-live="polite">読み込み中...</div>
+  </header>
+  <main id="map" aria-label="OTS店舗地図"></main>
+  <script src="config.js"></script>
+  <script type="module">
+    const statusElement = document.querySelector('#status');
+    const mapElement = document.querySelector('#map');
+    const queryElement = document.querySelector('#query');
+    const prefectureElement = document.querySelector('#prefecture');
+    const resetElement = document.querySelector('#reset');
+    const config = window.OTS_MAP_CONFIG ?? {};
+
+    if (!config.googleMapsApiKey || config.googleMapsApiKey === 'YOUR_BROWSER_API_KEY') {
+      fail('docs/config.js にGoogle Maps JavaScript APIのブラウザキーを設定してください。');
+    } else {
+      await loadGoogleMaps(config.googleMapsApiKey);
+      const response = await fetch(`stores.json?ts=${Date.now()}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`stores.json HTTP ${response.status}`);
+      const dataset = await response.json();
+      await startMap(dataset);
+    }
+
+    async function startMap(dataset) {
+      const { Map, InfoWindow } = await google.maps.importLibrary('maps');
+      const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
+      const map = new Map(mapElement, {
+        center: { lat: 36.2, lng: 138.25 },
+        zoom: 5,
+        mapId: config.mapId || 'DEMO_MAP_ID',
+        streetViewControl: false,
+        fullscreenControl: true
+      });
+      const infoWindow = new InfoWindow();
+      const stores = Array.isArray(dataset.stores) ? dataset.stores : [];
+      const markers = stores.map((store) => {
+        const marker = new AdvancedMarkerElement({
+          map,
+          position: { lat: Number(store.latitude), lng: Number(store.longitude) },
+          title: store.name || store.storeId
+        });
+        marker.addListener('click', () => {
+          infoWindow.setContent(infoHtml(store));
+          infoWindow.open({ map, anchor: marker });
+        });
+        return { marker, store };
+      });
+
+      const prefectures = [...new Set(stores.map((store) => store.prefecture).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
+      for (const prefecture of prefectures) {
+        const option = document.createElement('option');
+        option.value = prefecture;
+        option.textContent = prefecture;
+        prefectureElement.append(option);
+      }
+
+      const applyFilter = () => {
+        const query = normalize(queryElement.value);
+        const prefecture = prefectureElement.value;
+        const bounds = new google.maps.LatLngBounds();
+        let visible = 0;
+        for (const item of markers) {
+          const haystack = normalize(`${item.store.name} ${item.store.address} ${item.store.storeId}`);
+          const show = (!query || haystack.includes(query)) && (!prefecture || item.store.prefecture === prefecture);
+          item.marker.map = show ? map : null;
+          if (show) {
+            bounds.extend(item.marker.position);
+            visible += 1;
+          }
+        }
+        if (visible === 1) {
+          map.fitBounds(bounds);
+          map.setZoom(15);
+        } else if (visible > 1) {
+          map.fitBounds(bounds, 40);
+        }
+        const updated = dataset.meta?.fetchedAt ? new Date(dataset.meta.fetchedAt).toLocaleString('ja-JP') : '未取得';
+        statusElement.textContent = `${visible} / ${stores.length}店舗を表示｜最終取得: ${updated}`;
+      };
+
+      queryElement.addEventListener('input', applyFilter);
+      prefectureElement.addEventListener('change', applyFilter);
+      resetElement.addEventListener('click', () => {
+        queryElement.value = '';
+        prefectureElement.value = '';
+        applyFilter();
+      });
+      applyFilter();
+    }
+
+    function infoHtml(store) {
+      const mapQuery = encodeURIComponent(store.address || store.name || '');
+      return `<div class="info">
+        <h2>${escapeHtml(store.name || store.storeId)}</h2>
+        ${store.address ? `<p>${escapeHtml(store.address)}</p>` : ''}
+        ${store.phone ? `<p>電話: ${escapeHtml(store.phone)}</p>` : ''}
+        <p><a href="https://www.google.com/maps/search/?api=1&query=${mapQuery}" target="_blank" rel="noopener">Google マップで開く</a></p>
+        ${store.officialUrl ? `<p><a href="${escapeAttribute(store.officialUrl)}" target="_blank" rel="noopener">KONAMI店舗詳細</a></p>` : ''}
+      </div>`;
+    }
+
+    function normalize(value) {
+      return String(value ?? '').normalize('NFKC').toLocaleLowerCase('ja');
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      })[character]);
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value);
+    }
+
+    function fail(message) {
+      statusElement.textContent = '設定エラー';
+      mapElement.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+      throw new Error(message);
+    }
+
+    function loadGoogleMaps(key) {
+      return new Promise((resolve, reject) => {
+        if (window.google?.maps?.importLibrary) return resolve();
+        const callback = `initOtsMap_${Date.now()}`;
+        window[callback] = () => {
+          delete window[callback];
+          resolve();
+        };
+        const script = document.createElement('script');
+        script.async = true;
+        script.onerror = () => reject(new Error('Google Maps JavaScript APIを読み込めませんでした。'));
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&loading=async&callback=${callback}`;
+        document.head.append(script);
+      });
+    }
+  </script>
+</body>
+</html>
