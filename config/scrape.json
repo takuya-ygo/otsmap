@@ -1,7 +1,6 @@
 {
   "startUrls": [
-    "https://cardgame-network.konami.net/store_search?languageCode=ja",
-    "https://cardgame-network.konami.net/store_search2?languageCode=ja"
+    "https://cardgame-network.konami.net/store_search?languageCode=ja"
   ],
   "minimumStoreCount": 50,
   "maxPaginationSteps": 250,
