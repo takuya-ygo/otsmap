@@ -1,4 +1,4 @@
 window.OTS_MAP_CONFIG = {
-  googleMapsApiKey: 'YOUR_BROWSER_API_KEY',
+  googleMapsApiKey: 'AIzaSyCcj624N2-bTXb8EIWWIxPnLpnrUB5Yxt8',
   mapId: 'DEMO_MAP_ID'
 };
