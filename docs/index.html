@@ -24,7 +24,52 @@
       background: white;
       border-bottom: 1px solid #d9dde5;
     }
-    h1 { margin: 0; font-size: 1.2rem; }
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    h1 {
+      min-width: 0;
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    .toolbar-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      width: 42px;
+      height: 36px;
+      min-height: 36px;
+      border: 1px solid #aeb5c1;
+      border-radius: 9px;
+      padding: 0;
+      font: inherit;
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1;
+      background: #ffffff;
+      color: #181a1f;
+      cursor: pointer;
+    }
+
+    .toolbar-toggle:hover {
+      background: #eef1f5;
+    }
+
+    header.is-collapsed {
+      gap: 0;
+    }
+
+    header.is-collapsed .controls,
+    header.is-collapsed .status {
+      display: none;
+    }
+
     .controls {
       display: flex;
       flex-direction: column;
@@ -62,12 +107,113 @@
     .controls button:hover {
       background: #eef1f5;
     }
+
+    .type-filters {
+      display: grid;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .type-filter {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .type-filter-name {
+      min-width: 0;
+    }
+
+    .type-filter-state {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 66px;
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: #eef1f5;
+      color: #596273;
+      font-size: .82rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .type-filter[data-state="include"] {
+      border-color: #0b57d0;
+      background: #e8f0fe;
+      color: #174ea6;
+    }
+
+    .type-filter[data-state="include"] .type-filter-state {
+      background: #0b57d0;
+      color: #ffffff;
+    }
+
+    .type-filter[data-state="exclude"] {
+      border-color: #b3261e;
+      background: #fce8e6;
+      color: #8c1d18;
+    }
+
+    .type-filter[data-state="exclude"] .type-filter-state {
+      background: #b3261e;
+      color: #ffffff;
+    }
+
+    .filter-help {
+      margin: 0;
+      color: #596273;
+      font-size: .78rem;
+      line-height: 1.5;
+    }
+
     .status { font-size: .88rem; color: #596273; }
     #map { flex: 1 1 auto; width: 100%; min-height: 480px; }
     .info { max-width: 320px; line-height: 1.5; }
     .info h2 { margin: 0 0 6px; font-size: 1rem; }
     .info p { margin: 4px 0; }
     .info a { color: #1358bf; }
+
+    .store-badges {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+      margin: 0 0 8px;
+    }
+
+    .store-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid #c7cbd1;
+      border-radius: 999px;
+      padding: 3px 9px 3px 4px;
+      background: #f8f9fa;
+      color: #202124;
+      font-size: .78rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .store-badge-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 24px;
+      border-radius: 999px;
+      color: #ffffff;
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .store-badge--ots .store-badge-icon { background: #0b57d0; }
+    .store-badge--satellite .store-badge-icon { background: #6f42c1; }
+
     .error { padding: 20px; background: #fff3f3; color: #8b1a1a; }
     @media (max-width: 680px) {
       .controls { width: 100%; }
@@ -76,6 +222,17 @@
     @media (prefers-color-scheme: dark) {
       body { background: #111318; color: #f1f3f7; }
       header { background: #1b1e25; border-color: #343944; }
+
+      .toolbar-toggle {
+        background: #1b1e25;
+        color: #f1f3f7;
+        border-color: #687181;
+        color-scheme: dark;
+      }
+
+      .toolbar-toggle:hover {
+        background: #292e38;
+      }
 
       .controls input,
       .controls select,
@@ -100,6 +257,34 @@
         background: #292e38;
       }
 
+      .type-filter-state {
+        background: #292e38;
+        color: #d5dae3;
+      }
+
+      .type-filter[data-state="include"] {
+        border-color: #8ab4f8;
+        background: #172a46;
+        color: #d2e3fc;
+      }
+
+      .type-filter[data-state="include"] .type-filter-state {
+        background: #8ab4f8;
+        color: #10213a;
+      }
+
+      .type-filter[data-state="exclude"] {
+        border-color: #f28b82;
+        background: #3a1e1e;
+        color: #f6aea7;
+      }
+
+      .type-filter[data-state="exclude"] .type-filter-state {
+        background: #f28b82;
+        color: #3b1010;
+      }
+
+      .filter-help { color: #b5bdca; }
       .status { color: #b5bdca; }
       .error { background: #3a1e1e; color: #ffd1d1; }
     }
@@ -168,24 +353,90 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1>遊戯王 オフィシャルトーナメントストア マップ</h1>
-    <div class="controls">
+  <header id="toolbar">
+    <div class="title-row">
+      <h1>遊戯王 オフィシャルトーナメントストア マップ</h1>
+      <button
+        id="toolbar-toggle"
+        class="toolbar-toggle"
+        type="button"
+        aria-expanded="true"
+        aria-controls="map-controls status"
+        aria-label="検索バーを閉じる"
+        title="検索バーを閉じる"
+      >∧</button>
+    </div>
+    <div id="map-controls" class="controls">
       <button id="reset" type="button">表示をリセット</button>
       <input id="query" type="search" placeholder="店舗名・住所で検索" aria-label="店舗名・住所で検索">
       <select id="prefecture" aria-label="都道府県"><option value="">すべての都道府県</option></select>
+      <div class="type-filters" role="group" aria-label="店舗属性による絞り込み">
+        <button
+          id="filter-ots"
+          class="type-filter"
+          type="button"
+          data-state="neutral"
+          data-filter-label="オフィシャルトーナメントストア"
+        >
+          <span class="type-filter-name">オフィシャルトーナメントストア</span>
+          <span class="type-filter-state">未選択</span>
+        </button>
+        <button
+          id="filter-satellite"
+          class="type-filter"
+          type="button"
+          data-state="neutral"
+          data-filter-label="サテライトショップ"
+        >
+          <span class="type-filter-name">サテライトショップ</span>
+          <span class="type-filter-state">未選択</span>
+        </button>
+      </div>
+      <p class="filter-help">各ボタンは「未選択 → 選択 → 除外」の順で切り替わります。複数の条件はANDで適用されます。</p>
     </div>
     <div id="status" class="status" aria-live="polite">読み込み中...</div>
   </header>
   <main id="map" aria-label="OTS店舗地図"></main>
   <script src="config.js"></script>
   <script type="module">
+    const toolbarElement = document.querySelector('#toolbar');
+    const toolbarToggleElement = document.querySelector('#toolbar-toggle');
     const statusElement = document.querySelector('#status');
     const mapElement = document.querySelector('#map');
     const queryElement = document.querySelector('#query');
     const prefectureElement = document.querySelector('#prefecture');
     const resetElement = document.querySelector('#reset');
+    const officialFilterElement = document.querySelector('#filter-ots');
+    const satelliteFilterElement = document.querySelector('#filter-satellite');
     const config = window.OTS_MAP_CONFIG ?? {};
+    const TYPE_FILTER_STATES = Object.freeze(['neutral', 'include', 'exclude']);
+    const TYPE_FILTER_LABELS = Object.freeze({
+      neutral: '未選択',
+      include: '選択',
+      exclude: '除外'
+    });
+    const typeFilterState = {
+      officialTournamentStore: 'neutral',
+      satelliteShop: 'neutral'
+    };
+    let mapInstance = null;
+
+    toolbarToggleElement.addEventListener('click', () => {
+      const collapsed = toolbarElement.classList.toggle('is-collapsed');
+      const label = collapsed ? '検索バーを開く' : '検索バーを閉じる';
+
+      toolbarToggleElement.textContent = collapsed ? '∨' : '∧';
+      toolbarToggleElement.setAttribute('aria-expanded', String(!collapsed));
+      toolbarToggleElement.setAttribute('aria-label', label);
+      toolbarToggleElement.title = label;
+
+      // ヘッダーの高さが変わった後、地図を新しい表示領域へ合わせる
+      requestAnimationFrame(() => {
+        if (mapInstance && window.google?.maps) {
+          google.maps.event.trigger(mapInstance, 'resize');
+        }
+      });
+    });
 
     // 厚生労働省「都道府県番号」の01〜47順
     const PREFECTURE_ORDER = Object.freeze([
@@ -221,6 +472,7 @@
         streetViewControl: false,
         fullscreenControl: true
       });
+      mapInstance = map;
       const infoWindow = new InfoWindow();
       const stores = Array.isArray(dataset.stores) ? dataset.stores : [];
       const markers = stores.map((store) => {
@@ -256,9 +508,22 @@
         const prefecture = prefectureElement.value;
         const bounds = new google.maps.LatLngBounds();
         let visible = 0;
+        infoWindow.close();
+
         for (const item of markers) {
           const haystack = normalize(`${item.store.name} ${item.store.address} ${item.store.storeId}`);
-          const show = (!query || haystack.includes(query)) && (!prefecture || item.store.prefecture === prefecture);
+          const matchesText = !query || haystack.includes(query);
+          const matchesPrefecture = !prefecture || item.store.prefecture === prefecture;
+          const matchesOfficial = matchesTypeFilter(
+            hasStoreType(item.store, 'officialTournamentStore'),
+            typeFilterState.officialTournamentStore
+          );
+          const matchesSatellite = matchesTypeFilter(
+            hasStoreType(item.store, 'satelliteShop'),
+            typeFilterState.satelliteShop
+          );
+          const show = matchesText && matchesPrefecture && matchesOfficial && matchesSatellite;
+
           item.marker.map = show ? map : null;
           if (show) {
             bounds.extend(item.marker.position);
@@ -277,23 +542,80 @@
 
       queryElement.addEventListener('input', applyFilter);
       prefectureElement.addEventListener('change', applyFilter);
+      bindTypeFilter(officialFilterElement, 'officialTournamentStore', applyFilter);
+      bindTypeFilter(satelliteFilterElement, 'satelliteShop', applyFilter);
       resetElement.addEventListener('click', () => {
         queryElement.value = '';
         prefectureElement.value = '';
+        typeFilterState.officialTournamentStore = 'neutral';
+        typeFilterState.satelliteShop = 'neutral';
+        renderTypeFilter(officialFilterElement, 'neutral');
+        renderTypeFilter(satelliteFilterElement, 'neutral');
         applyFilter();
       });
+      renderTypeFilter(officialFilterElement, typeFilterState.officialTournamentStore);
+      renderTypeFilter(satelliteFilterElement, typeFilterState.satelliteShop);
       applyFilter();
     }
 
     function infoHtml(store) {
       const mapQuery = encodeURIComponent(store.address || store.name || '');
+      const badges = storeBadgesHtml(store);
       return `<div class="info">
         <h2>${escapeHtml(store.name || store.storeId)}</h2>
+        ${badges}
         ${store.address ? `<p>${escapeHtml(store.address)}</p>` : ''}
         ${store.phone ? `<p>電話: ${escapeHtml(store.phone)}</p>` : ''}
         <p><a href="https://www.google.com/maps/search/?api=1&query=${mapQuery}" target="_blank" rel="noopener">Google マップで開く</a></p>
         ${store.officialUrl ? `<p><a href="${escapeAttribute(store.officialUrl)}" target="_blank" rel="noopener">KONAMI店舗詳細</a></p>` : ''}
       </div>`;
+    }
+
+    function storeBadgesHtml(store) {
+      const badges = [];
+      if (hasStoreType(store, 'officialTournamentStore')) {
+        badges.push(`<span class="store-badge store-badge--ots"><span class="store-badge-icon" aria-hidden="true">OTS</span>オフィシャルトーナメントストア</span>`);
+      }
+      if (hasStoreType(store, 'satelliteShop')) {
+        badges.push(`<span class="store-badge store-badge--satellite"><span class="store-badge-icon" aria-hidden="true">SS</span>サテライトショップ</span>`);
+      }
+      return badges.length ? `<div class="store-badges">${badges.join('')}</div>` : '';
+    }
+
+    function hasStoreType(store, type) {
+      const storeTypes = Array.isArray(store.storeTypes) ? store.storeTypes : [];
+      if (type === 'officialTournamentStore') {
+        return store.isOfficialTournamentStore === true || storeTypes.includes(type);
+      }
+      if (type === 'satelliteShop') {
+        return store.isSatelliteShop === true || storeTypes.includes(type);
+      }
+      return storeTypes.includes(type);
+    }
+
+    function matchesTypeFilter(hasType, state) {
+      if (state === 'include') return hasType;
+      if (state === 'exclude') return !hasType;
+      return true;
+    }
+
+    function bindTypeFilter(element, key, applyFilter) {
+      element.addEventListener('click', () => {
+        const currentIndex = TYPE_FILTER_STATES.indexOf(typeFilterState[key]);
+        const nextState = TYPE_FILTER_STATES[(currentIndex + 1) % TYPE_FILTER_STATES.length];
+        typeFilterState[key] = nextState;
+        renderTypeFilter(element, nextState);
+        applyFilter();
+      });
+    }
+
+    function renderTypeFilter(element, state) {
+      const label = element.dataset.filterLabel || '';
+      const stateLabel = TYPE_FILTER_LABELS[state] || TYPE_FILTER_LABELS.neutral;
+      element.dataset.state = state;
+      element.querySelector('.type-filter-state').textContent = stateLabel;
+      element.setAttribute('aria-label', `${label}: ${stateLabel}`);
+      element.title = `${label}: ${stateLabel}。押すと次の状態へ切り替わります。`;
     }
 
     function normalize(value) {
