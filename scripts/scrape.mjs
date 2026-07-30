@@ -6,6 +6,7 @@ import {
   extractStoreId,
   findStoreCandidates,
   normalizeSpace,
+  normalizeStoreTypes,
   officialUrl,
   prefectureFromAddress,
   readJson,
@@ -75,11 +76,15 @@ try {
   }
 
   const now = new Date().toISOString();
+  const officialTournamentStoreCount = unique.filter((store) => store.isOfficialTournamentStore).length;
+  const satelliteShopCount = unique.filter((store) => store.isSatelliteShop).length;
   const output = {
     meta: {
       source: startUrls,
       fetchedAt: now,
       count: unique.length,
+      officialTournamentStoreCount,
+      satelliteShopCount,
       note: 'KONAMI CARD GAME NETWORKの公開検索画面から自動取得。公開・転載は権利者の許可条件を確認してください。'
     },
     stores: unique.map((store) => ({
@@ -92,7 +97,7 @@ try {
 
   await writeJson(path.join(ROOT, 'data/raw-stores.json'), output);
   await writeJson(path.join(ROOT, 'artifacts/network-summary.json'), networkLog);
-  console.log(`取得完了: ${unique.length}店舗`);
+  console.log(`取得完了: ${unique.length}店舗 / OTS: ${officialTournamentStoreCount}店舗 / サテライトショップ: ${satelliteShopCount}店舗`);
 } finally {
   await browser.close();
 }
@@ -344,10 +349,14 @@ async function collectDomStores(page, stores, maxSteps) {
 async function extractLinksAndCards(page, stores) {
   const domStores = await page.locator('a[href*="/store/detail/"]').evaluateAll((links) => links.map((link) => {
     const href = link.href;
-    const container = link.closest('li, article, tr, .store, .shop, .result, [class*="store"], [class*="shop"]') || link.parentElement;
+    const container = link.closest('li, article, tr, .store, .shop, .result, [class*="store"], [class*="shop"], .results-btn') || link.parentElement;
+    const iconSources = [...(container?.querySelectorAll('img') ?? [])]
+      .map((image) => image.getAttribute('src') || image.getAttribute('ng-src') || '')
+      .filter(Boolean);
     return {
       href,
-      text: (container?.innerText || link.innerText || '').trim()
+      text: (container?.innerText || link.innerText || '').trim(),
+      iconSources
     };
   })).catch(() => []);
 
@@ -357,12 +366,14 @@ async function extractLinksAndCards(page, stores) {
     const address = lines.find((line) => /(?:〒?\d{3}-?\d{4}|都|道|府|県)/.test(line) && line.length > 5) ?? '';
     const phone = lines.find((line) => /(?:TEL|電話)?\s*0\d{1,4}-\d{1,4}-\d{3,4}/i.test(line)) ?? '';
     const name = lines.find((line) => line !== address && line !== phone && line.length <= 100) ?? '';
+    const storeTypes = normalizeStoreTypes(item.iconSources);
     stores.push({
       storeId,
       name,
       address,
       prefecture: prefectureFromAddress(address),
       phone,
+      ...(storeTypes.length ? { storeTypes } : {}),
       officialUrl: item.href,
       sourceUrl: page.url()
     });

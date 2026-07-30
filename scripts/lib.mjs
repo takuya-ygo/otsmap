@@ -1,6 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+export const STORE_TYPE_OFFICIAL = 'officialTournamentStore';
+export const STORE_TYPE_SATELLITE = 'satelliteShop';
+
 export async function readJson(filePath, fallback = null) {
   try {
     return JSON.parse(await fs.readFile(filePath, 'utf8'));
@@ -69,17 +72,43 @@ export function dedupeStores(stores) {
     const current = byKey.get(key) ?? {};
     byKey.set(key, mergeStore(current, store));
   }
-  return [...byKey.values()].sort((a, b) =>
-    `${a.prefecture}${a.address}${a.name}`.localeCompare(`${b.prefecture}${b.address}${b.name}`, 'ja')
-  );
+  return [...byKey.values()]
+    .map(finalizeStoreTypes)
+    .sort((a, b) =>
+      `${a.prefecture}${a.address}${a.name}`.localeCompare(`${b.prefecture}${b.address}${b.name}`, 'ja')
+    );
 }
 
 function mergeStore(left, right) {
   const merged = { ...left };
   for (const [key, value] of Object.entries(right)) {
+    if (key === 'storeTypes') {
+      const combined = normalizeStoreTypes([merged.storeTypes, value]);
+      if (combined.length) merged.storeTypes = combined;
+      continue;
+    }
+    if (key === 'isOfficialTournamentStore' || key === 'isSatelliteShop') {
+      // 真である情報だけを統合する。別の取得経路で属性が欠落していてもtrueを消さない。
+      if (value === true) merged[key] = true;
+      continue;
+    }
     if (value !== undefined && value !== null && value !== '') merged[key] = value;
   }
   return merged;
+}
+
+function finalizeStoreTypes(store) {
+  const storeTypes = normalizeStoreTypes([
+    store.storeTypes,
+    store.isOfficialTournamentStore === true ? STORE_TYPE_OFFICIAL : null,
+    store.isSatelliteShop === true ? STORE_TYPE_SATELLITE : null
+  ]);
+  return {
+    ...store,
+    storeTypes,
+    isOfficialTournamentStore: storeTypes.includes(STORE_TYPE_OFFICIAL),
+    isSatelliteShop: storeTypes.includes(STORE_TYPE_SATELLITE)
+  };
 }
 
 export function normalizeStore(candidate, sourceUrl = '') {
@@ -118,6 +147,20 @@ export function normalizeStore(candidate, sourceUrl = '') {
     'longitude','lng','lon','location.longitude','location.lng','location.lon',
     'position.longitude','position.lng','position.lon','x'
   ]));
+  const storeTypes = normalizeStoreTypes([
+    ...valuesAtPaths(candidate, [
+      'typeRankIconList','typeRankIcons','typeRankList','typeRanks','typeRank',
+      'storeTypeRankList','storeTypeRanks','storeTypes','storeType','rankList','ranks',
+      'attributes','badges','icons'
+    ]),
+    candidate.isOfficialTournamentStore === true ? STORE_TYPE_OFFICIAL : null,
+    candidate.officialTournamentStore === true ? STORE_TYPE_OFFICIAL : null,
+    candidate.isOts === true ? STORE_TYPE_OFFICIAL : null,
+    candidate.ots === true ? STORE_TYPE_OFFICIAL : null,
+    candidate.isSatelliteShop === true ? STORE_TYPE_SATELLITE : null,
+    candidate.satelliteShop === true ? STORE_TYPE_SATELLITE : null,
+    candidate.isSatellite === true ? STORE_TYPE_SATELLITE : null
+  ]);
 
   const looksJapanese = storeId.endsWith('JP') || /Japan|日本|都|道|府|県/.test(`${address}${prefecture}`);
   const hasIdentity = Boolean(storeId || (name && address));
@@ -132,9 +175,60 @@ export function normalizeStore(candidate, sourceUrl = '') {
     phone,
     latitude,
     longitude,
+    ...(storeTypes.length ? { storeTypes } : {}),
     officialUrl: storeId ? officialUrl(storeId) : url,
     sourceUrl: sourceUrl || url
   };
+}
+
+function valuesAtPaths(object, paths) {
+  return paths
+    .map((dottedPath) => getByPath(object, dottedPath))
+    .filter((value) => value !== undefined && value !== null && value !== '');
+}
+
+export function normalizeStoreTypes(values) {
+  const result = new Set();
+  const seen = new WeakSet();
+
+  function inspect(value, keyHint = '') {
+    if (value === undefined || value === null || value === '') return;
+    if (typeof value === 'object') {
+      if (seen.has(value)) return;
+      seen.add(value);
+      if (Array.isArray(value)) {
+        for (const item of value) inspect(item, keyHint);
+      } else {
+        for (const [key, item] of Object.entries(value)) inspect(item, key);
+      }
+      return;
+    }
+
+    const text = normalizeSpace(value).toLowerCase();
+    const key = String(keyHint).toLowerCase();
+    if (
+      text === STORE_TYPE_OFFICIAL.toLowerCase() ||
+      /icn_shop_ots(?:\.svg)?/.test(text) ||
+      /official[ _-]*tournament[ _-]*store/.test(text) ||
+      /オフィシャルトーナメントストア/.test(text) ||
+      /(?:^|\D)11(?:\D|$)/.test(text)
+    ) {
+      result.add(STORE_TYPE_OFFICIAL);
+    }
+
+    if (
+      text === STORE_TYPE_SATELLITE.toLowerCase() ||
+      /icn_shop_st(?:\.svg)?/.test(text) ||
+      /satellite[ _-]*shop/.test(text) ||
+      /サテライトショップ/.test(text) ||
+      /(?:^|\D)21(?:\D|$)/.test(text)
+    ) {
+      result.add(STORE_TYPE_SATELLITE);
+    }
+  }
+
+  inspect(values);
+  return [STORE_TYPE_OFFICIAL, STORE_TYPE_SATELLITE].filter((type) => result.has(type));
 }
 
 export function findStoreCandidates(value, sourceUrl = '') {
