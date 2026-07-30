@@ -71,11 +71,35 @@
     }
 
     .controls {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns:
+        minmax(110px, .7fr)
+        minmax(180px, 1.8fr)
+        minmax(140px, 1fr)
+        minmax(220px, 1.6fr)
+        minmax(180px, 1.3fr);
       align-items: stretch;
-      width: min(100%, 420px);
+      width: 100%;
       gap: 8px;
+    }
+
+    .controls > #reset,
+    .controls > #query,
+    .controls > #prefecture,
+    .type-filter {
+      min-width: 0;
+    }
+
+    .controls > #reset {
+      white-space: nowrap;
+    }
+
+    .controls > #query {
+      width: 100%;
+    }
+
+    .controls > #prefecture {
+      width: 100%;
     }
     .controls input,
     .controls select,
@@ -109,9 +133,7 @@
     }
 
     .type-filters {
-      display: grid;
-      gap: 8px;
-      margin-top: 4px;
+      display: contents;
     }
 
     .type-filter {
@@ -163,6 +185,7 @@
     }
 
     .filter-help {
+      grid-column: 1 / -1;
       margin: 0;
       color: #596273;
       font-size: .78rem;
@@ -216,7 +239,21 @@
 
     .error { padding: 20px; background: #fff3f3; color: #8b1a1a; }
     @media (max-width: 680px) {
-      .controls { width: 100%; }
+      .controls {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .type-filters {
+        display: grid;
+        gap: 8px;
+      }
+
+      .filter-help {
+        width: 100%;
+      }
+
       #map { min-height: 420px; }
     }
     @media (prefers-color-scheme: dark) {
