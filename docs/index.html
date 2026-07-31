@@ -2,16 +2,25 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>遊戯王 OTS マップ</title>
   <meta name="description" content="遊戯王オフィシャルトーナメントストアの検索マップ">
   <style>
     :root { color-scheme: light dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
-    html, body { height: 100%; }
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
     body {
       display: flex;
       flex-direction: column;
+      min-height: 100dvh;
       margin: 0;
       background: #f5f6f8;
       color: #181a1f;
@@ -37,7 +46,15 @@
       font-size: 1.2rem;
     }
 
-    .toolbar-toggle {
+    .title-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: none;
+    }
+
+    .toolbar-toggle,
+    .map-focus-button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -57,8 +74,49 @@
       cursor: pointer;
     }
 
-    .toolbar-toggle:hover {
+    .toolbar-toggle:hover,
+    .map-focus-button:hover,
+    .map-focus-exit:hover {
       background: #eef1f5;
+    }
+
+    .map-focus-button {
+      display: none;
+    }
+
+    .map-focus-exit {
+      position: fixed;
+      z-index: 10000;
+      top: max(12px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 1px solid #aeb5c1;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font: inherit;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.94);
+      color: #181a1f;
+      box-shadow: 0 2px 10px rgba(35, 39, 47, 0.22);
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+    }
+
+    body.map-focus-mode header {
+      display: none;
+    }
+
+    body.map-focus-mode .map-focus-exit {
+      display: inline-flex;
+    }
+
+    body.map-focus-mode #map {
+      height: 100dvh;
+      min-height: 100dvh;
+      flex-basis: 100dvh;
     }
 
     header.is-collapsed {
@@ -193,7 +251,14 @@
     }
 
     .status { font-size: .88rem; color: #596273; }
-    #map { flex: 1 1 auto; width: 100%; min-height: 480px; }
+    #map {
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: 0;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+    }
     .info { max-width: 320px; line-height: 1.5; }
     .info h2 { margin: 0 0 6px; font-size: 1rem; }
     .info p { margin: 4px 0; }
@@ -239,6 +304,31 @@
 
     .error { padding: 20px; background: #fff3f3; color: #8b1a1a; }
     @media (max-width: 680px) {
+      header {
+        max-height: 58dvh;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        padding-top: max(12px, env(safe-area-inset-top));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-left: max(12px, env(safe-area-inset-left));
+      }
+
+      h1 {
+        font-size: 1rem;
+        line-height: 1.35;
+      }
+
+      .map-focus-button {
+        display: inline-flex;
+      }
+
+      .toolbar-toggle,
+      .map-focus-button {
+        width: 40px;
+        height: 40px;
+        min-height: 40px;
+      }
+
       .controls {
         display: flex;
         flex-direction: column;
@@ -254,21 +344,36 @@
         width: 100%;
       }
 
-      #map { min-height: 420px; }
+      #map {
+        min-height: 0;
+      }
     }
     @media (prefers-color-scheme: dark) {
       body { background: #111318; color: #f1f3f7; }
       header { background: #1b1e25; border-color: #343944; }
 
-      .toolbar-toggle {
+      .toolbar-toggle,
+      .map-focus-button {
         background: #1b1e25;
         color: #f1f3f7;
         border-color: #687181;
         color-scheme: dark;
       }
 
-      .toolbar-toggle:hover {
+      .toolbar-toggle:hover,
+      .map-focus-button:hover {
         background: #292e38;
+      }
+
+      .map-focus-exit {
+        border-color: #687181;
+        background: rgba(27, 30, 37, 0.94);
+        color: #f1f3f7;
+        color-scheme: dark;
+      }
+
+      .map-focus-exit:hover {
+        background: rgba(41, 46, 56, 0.97);
       }
 
       .controls input,
@@ -393,15 +498,24 @@
   <header id="toolbar">
     <div class="title-row">
       <h1>遊戯王 オフィシャルトーナメントストア マップ</h1>
-      <button
-        id="toolbar-toggle"
-        class="toolbar-toggle"
-        type="button"
-        aria-expanded="true"
-        aria-controls="map-controls status"
-        aria-label="検索バーを閉じる"
-        title="検索バーを閉じる"
-      >∧</button>
+      <div class="title-actions">
+        <button
+          id="map-focus-button"
+          class="map-focus-button"
+          type="button"
+          aria-label="地図を全画面表示"
+          title="地図を全画面表示"
+        >⛶</button>
+        <button
+          id="toolbar-toggle"
+          class="toolbar-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="map-controls status"
+          aria-label="検索バーを閉じる"
+          title="検索バーを閉じる"
+        >∧</button>
+      </div>
     </div>
     <div id="map-controls" class="controls">
       <button id="reset" type="button">表示をリセット</button>
@@ -433,11 +547,14 @@
     </div>
     <div id="status" class="status" aria-live="polite">読み込み中...</div>
   </header>
+  <button id="map-focus-exit" class="map-focus-exit" type="button" aria-label="全画面地図を終了">検索を表示</button>
   <main id="map" aria-label="OTS店舗地図"></main>
   <script src="config.js"></script>
   <script type="module">
     const toolbarElement = document.querySelector('#toolbar');
     const toolbarToggleElement = document.querySelector('#toolbar-toggle');
+    const mapFocusButtonElement = document.querySelector('#map-focus-button');
+    const mapFocusExitElement = document.querySelector('#map-focus-exit');
     const statusElement = document.querySelector('#status');
     const mapElement = document.querySelector('#map');
     const queryElement = document.querySelector('#query');
@@ -466,13 +583,21 @@
       toolbarToggleElement.setAttribute('aria-expanded', String(!collapsed));
       toolbarToggleElement.setAttribute('aria-label', label);
       toolbarToggleElement.title = label;
+      resizeMapPreservingCenter();
+    });
 
-      // ヘッダーの高さが変わった後、地図を新しい表示領域へ合わせる
-      requestAnimationFrame(() => {
-        if (mapInstance && window.google?.maps) {
-          google.maps.event.trigger(mapInstance, 'resize');
-        }
-      });
+    mapFocusButtonElement.addEventListener('click', () => {
+      setMapFocusMode(true);
+    });
+
+    mapFocusExitElement.addEventListener('click', () => {
+      setMapFocusMode(false);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && document.body.classList.contains('map-focus-mode')) {
+        setMapFocusMode(false);
+      }
     });
 
     // 厚生労働省「都道府県番号」の01〜47順
@@ -507,7 +632,8 @@
         zoom: 5,
         mapId: config.mapId || 'DEMO_MAP_ID',
         streetViewControl: false,
-        fullscreenControl: true
+        fullscreenControl: false,
+        gestureHandling: window.matchMedia('(max-width: 680px)').matches ? 'greedy' : 'auto'
       });
       mapInstance = map;
       const infoWindow = new InfoWindow();
@@ -653,6 +779,21 @@
       element.querySelector('.type-filter-state').textContent = stateLabel;
       element.setAttribute('aria-label', `${label}: ${stateLabel}`);
       element.title = `${label}: ${stateLabel}。押すと次の状態へ切り替わります。`;
+    }
+
+    function setMapFocusMode(enabled) {
+      document.body.classList.toggle('map-focus-mode', enabled);
+      mapFocusButtonElement.setAttribute('aria-pressed', String(enabled));
+      resizeMapPreservingCenter();
+    }
+
+    function resizeMapPreservingCenter() {
+      requestAnimationFrame(() => {
+        if (!mapInstance || !window.google?.maps) return;
+        const center = mapInstance.getCenter();
+        google.maps.event.trigger(mapInstance, 'resize');
+        if (center) mapInstance.setCenter(center);
+      });
     }
 
     function normalize(value) {
