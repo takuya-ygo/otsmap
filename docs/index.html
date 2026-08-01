@@ -2,617 +2,59 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>遊戯王 OTS マップ</title>
   <meta name="description" content="遊戯王オフィシャルトーナメントストアの検索マップ">
   <style>
     :root { color-scheme: light dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      min-height: 100%;
-      overflow: hidden;
-      overscroll-behavior: none;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100dvh;
-      margin: 0;
-      background: #f5f6f8;
-      color: #181a1f;
-    }
-    header {
-      display: grid;
-      flex: none;
-      gap: 12px;
-      padding: 14px 16px;
-      background: white;
-      border-bottom: 1px solid #d9dde5;
-    }
-    .title-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    h1 {
-      min-width: 0;
-      margin: 0;
-      font-size: 1.2rem;
-    }
-
-    .title-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: none;
-    }
-
-    .toolbar-toggle,
-    .map-focus-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      width: 42px;
-      height: 36px;
-      min-height: 36px;
-      border: 1px solid #aeb5c1;
-      border-radius: 9px;
-      padding: 0;
-      font: inherit;
-      font-size: 1.25rem;
-      font-weight: 700;
-      line-height: 1;
-      background: #ffffff;
-      color: #181a1f;
-      cursor: pointer;
-    }
-
-    .toolbar-toggle:hover,
-    .map-focus-button:hover,
-    .map-focus-exit:hover {
-      background: #eef1f5;
-    }
-
-    .map-focus-button {
-      display: none;
-    }
-
-    .map-focus-exit {
-      position: fixed;
-      z-index: 10000;
-      top: max(12px, env(safe-area-inset-top));
-      right: max(12px, env(safe-area-inset-right));
-      display: none;
-      align-items: center;
-      justify-content: center;
-      min-height: 44px;
-      border: 1px solid #aeb5c1;
-      border-radius: 999px;
-      padding: 9px 14px;
-      font: inherit;
-      font-weight: 700;
-      background: rgba(255, 255, 255, 0.94);
-      color: #181a1f;
-      box-shadow: 0 2px 10px rgba(35, 39, 47, 0.22);
-      backdrop-filter: blur(8px);
-      cursor: pointer;
-    }
-
-    body.map-focus-mode header {
-      display: none;
-    }
-
-    body.map-focus-mode .map-focus-exit {
-      display: inline-flex;
-    }
-
-    body.map-focus-mode #map {
-      height: 100dvh;
-      min-height: 100dvh;
-      flex-basis: 100dvh;
-    }
-
-    header.is-collapsed {
-      gap: 0;
-    }
-
-    header.is-collapsed .controls,
-    header.is-collapsed .status {
-      display: none;
-    }
-
-    .controls {
-      display: grid;
-      grid-template-columns:
-        minmax(110px, .7fr)
-        minmax(180px, 1.8fr)
-        minmax(140px, 1fr)
-        minmax(220px, 1.6fr)
-        minmax(180px, 1.3fr);
-      align-items: stretch;
-      width: 100%;
-      gap: 8px;
-    }
-
-    .controls > #reset,
-    .controls > #query,
-    .controls > #prefecture,
-    .type-filter {
-      min-width: 0;
-    }
-
-    .controls > #reset {
-      white-space: nowrap;
-    }
-
-    .controls > #query {
-      width: 100%;
-    }
-
-    .controls > #prefecture {
-      width: 100%;
-    }
-    .controls input,
-    .controls select,
-    .controls button {
-      min-height: 42px;
-      border: 1px solid #aeb5c1;
-      border-radius: 9px;
-      padding: 8px 10px;
-      font: inherit;
-      background: #ffffff;
-      color: #181a1f;
-    }
-
-    .controls input::placeholder {
-      color: #687386;
-      opacity: 1;
-    }
-
-    .controls select option {
-      background: #ffffff;
-      color: #181a1f;
-    }
-
-    .controls button {
-      cursor: pointer;
-      font-weight: 500;
-    }
-
-    .controls button:hover {
-      background: #eef1f5;
-    }
-
-    .type-filters {
-      display: contents;
-    }
-
-    .type-filter {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      gap: 12px;
-      text-align: left;
-    }
-
-    .type-filter-name {
-      min-width: 0;
-    }
-
-    .type-filter-state {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 66px;
-      border-radius: 999px;
-      padding: 3px 8px;
-      background: #eef1f5;
-      color: #596273;
-      font-size: .82rem;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .type-filter[data-state="include"] {
-      border-color: #0b57d0;
-      background: #e8f0fe;
-      color: #174ea6;
-    }
-
-    .type-filter[data-state="include"] .type-filter-state {
-      background: #0b57d0;
-      color: #ffffff;
-    }
-
-    .type-filter[data-state="exclude"] {
-      border-color: #b3261e;
-      background: #fce8e6;
-      color: #8c1d18;
-    }
-
-    .type-filter[data-state="exclude"] .type-filter-state {
-      background: #b3261e;
-      color: #ffffff;
-    }
-
-    .filter-help {
-      grid-column: 1 / -1;
-      margin: 0;
-      color: #596273;
-      font-size: .78rem;
-      line-height: 1.5;
-    }
-
+    body { margin: 0; background: #f5f6f8; color: #181a1f; }
+    header { display: grid; gap: 12px; padding: 14px 16px; background: white; border-bottom: 1px solid #d9dde5; }
+    h1 { margin: 0; font-size: 1.2rem; }
+    .controls { display: grid; grid-template-columns: minmax(180px, 2fr) minmax(140px, 1fr) auto; gap: 8px; }
+    input, select, button { min-height: 42px; border: 1px solid #aeb5c1; border-radius: 9px; padding: 8px 10px; font: inherit; background: white; color: inherit; }
+    button { cursor: pointer; }
     .status { font-size: .88rem; color: #596273; }
-    #map {
-      flex: 1 1 auto;
-      width: 100%;
-      min-height: 0;
-      overflow: hidden;
-      overscroll-behavior: none;
-      touch-action: none;
-    }
+    #map { width: 100%; height: calc(100vh - 142px); min-height: 480px; }
     .info { max-width: 320px; line-height: 1.5; }
     .info h2 { margin: 0 0 6px; font-size: 1rem; }
     .info p { margin: 4px 0; }
     .info a { color: #1358bf; }
-
-    .store-badges {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 5px;
-      margin: 0 0 8px;
-    }
-
-    .store-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      border: 1px solid #c7cbd1;
-      border-radius: 999px;
-      padding: 3px 9px 3px 4px;
-      background: #f8f9fa;
-      color: #202124;
-      font-size: .78rem;
-      font-weight: 700;
-      line-height: 1.35;
-    }
-
-    .store-badge-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 30px;
-      height: 24px;
-      border-radius: 999px;
-      color: #ffffff;
-      font-size: .68rem;
-      font-weight: 800;
-      letter-spacing: .02em;
-    }
-
-    .store-badge--ots .store-badge-icon { background: #0b57d0; }
-    .store-badge--satellite .store-badge-icon { background: #6f42c1; }
-
     .error { padding: 20px; background: #fff3f3; color: #8b1a1a; }
     @media (max-width: 680px) {
-      header {
-        max-height: 58dvh;
-        overflow-y: auto;
-        overscroll-behavior-y: contain;
-        padding-top: max(12px, env(safe-area-inset-top));
-        padding-right: max(12px, env(safe-area-inset-right));
-        padding-left: max(12px, env(safe-area-inset-left));
-      }
-
-      h1 {
-        font-size: 1rem;
-        line-height: 1.35;
-      }
-
-      .map-focus-button {
-        display: inline-flex;
-      }
-
-      .toolbar-toggle,
-      .map-focus-button {
-        width: 40px;
-        height: 40px;
-        min-height: 40px;
-      }
-
-      .controls {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-      }
-
-      .type-filters {
-        display: grid;
-        gap: 8px;
-      }
-
-      .filter-help {
-        width: 100%;
-      }
-
-      #map {
-        min-height: 0;
-      }
+      .controls { grid-template-columns: 1fr 1fr; }
+      .controls input { grid-column: 1 / -1; }
+      #map { height: calc(100vh - 196px); }
     }
     @media (prefers-color-scheme: dark) {
       body { background: #111318; color: #f1f3f7; }
-      header { background: #1b1e25; border-color: #343944; }
-
-      .toolbar-toggle,
-      .map-focus-button {
-        background: #1b1e25;
-        color: #f1f3f7;
-        border-color: #687181;
-        color-scheme: dark;
-      }
-
-      .toolbar-toggle:hover,
-      .map-focus-button:hover {
-        background: #292e38;
-      }
-
-      .map-focus-exit {
-        border-color: #687181;
-        background: rgba(27, 30, 37, 0.94);
-        color: #f1f3f7;
-        color-scheme: dark;
-      }
-
-      .map-focus-exit:hover {
-        background: rgba(41, 46, 56, 0.97);
-      }
-
-      .controls input,
-      .controls select,
-      .controls button {
-        background: #1b1e25;
-        color: #f1f3f7;
-        border-color: #687181;
-        color-scheme: dark;
-      }
-
-      .controls input::placeholder {
-        color: #b5bdca;
-        opacity: 1;
-      }
-
-      .controls select option {
-        background: #1b1e25;
-        color: #f1f3f7;
-      }
-
-      .controls button:hover {
-        background: #292e38;
-      }
-
-      .type-filter-state {
-        background: #292e38;
-        color: #d5dae3;
-      }
-
-      .type-filter[data-state="include"] {
-        border-color: #8ab4f8;
-        background: #172a46;
-        color: #d2e3fc;
-      }
-
-      .type-filter[data-state="include"] .type-filter-state {
-        background: #8ab4f8;
-        color: #10213a;
-      }
-
-      .type-filter[data-state="exclude"] {
-        border-color: #f28b82;
-        background: #3a1e1e;
-        color: #f6aea7;
-      }
-
-      .type-filter[data-state="exclude"] .type-filter-state {
-        background: #f28b82;
-        color: #3b1010;
-      }
-
-      .filter-help { color: #b5bdca; }
+      header, input, select, button { background: #1b1e25; }
+      header { border-color: #343944; }
       .status { color: #b5bdca; }
+      .info a { color: #8ab4f8; }
       .error { background: #3a1e1e; color: #ffd1d1; }
-    }
-    /* Google Mapsの店舗情報ポップアップ */
-    .info {
-      color: #202124;
-      background: #ffffff;
-      color-scheme: light;
-    }
-
-    .info h2,
-    .info p {
-      color: #202124;
-    }
-
-    .info a {
-      color: #0b57d0;
-      font-weight: 600;
-    }
-
-    /* Google Mapsポップアップの閉じるボタン */
-    .gm-style button.gm-ui-hover-effect {
-      position: relative !important;
-      width: 32px !important;
-      height: 32px !important;
-      min-height: 0 !important;
-      margin: 4px !important;
-      padding: 0 !important;
-      border: 1px solid #9aa0a6 !important;
-      border-radius: 50% !important;
-      background: #ffffff !important;
-      box-shadow: 0 1px 3px rgba(60, 64, 67, 0.35) !important;
-      opacity: 1 !important;
-    }
-
-    .gm-style button.gm-ui-hover-effect:hover {
-      background: #f1f3f4 !important;
-    }
-
-    /* Google側のアイコン表示方式に依存せず、×を確実に表示 */
-    .gm-style button.gm-ui-hover-effect > span,
-    .gm-style button.gm-ui-hover-effect > img {
-      opacity: 0 !important;
-    }
-
-    .gm-style button.gm-ui-hover-effect::before,
-    .gm-style button.gm-ui-hover-effect::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 15px;
-      height: 2px;
-      border-radius: 1px;
-      background: #202124;
-      pointer-events: none;
-    }
-
-    .gm-style button.gm-ui-hover-effect::before {
-      transform: translate(-50%, -50%) rotate(45deg);
-    }
-
-    .gm-style button.gm-ui-hover-effect::after {
-      transform: translate(-50%, -50%) rotate(-45deg);
     }
   </style>
 </head>
 <body>
-  <header id="toolbar">
-    <div class="title-row">
-      <h1>遊戯王 オフィシャルトーナメントストア マップ</h1>
-      <div class="title-actions">
-        <button
-          id="map-focus-button"
-          class="map-focus-button"
-          type="button"
-          aria-label="地図を全画面表示"
-          title="地図を全画面表示"
-        >⛶</button>
-        <button
-          id="toolbar-toggle"
-          class="toolbar-toggle"
-          type="button"
-          aria-expanded="true"
-          aria-controls="map-controls status"
-          aria-label="検索バーを閉じる"
-          title="検索バーを閉じる"
-        >∧</button>
-      </div>
-    </div>
-    <div id="map-controls" class="controls">
-      <button id="reset" type="button">表示をリセット</button>
+  <header>
+    <h1>遊戯王 オフィシャルトーナメントストア マップ</h1>
+    <div class="controls">
       <input id="query" type="search" placeholder="店舗名・住所で検索" aria-label="店舗名・住所で検索">
       <select id="prefecture" aria-label="都道府県"><option value="">すべての都道府県</option></select>
-      <div class="type-filters" role="group" aria-label="店舗属性による絞り込み">
-        <button
-          id="filter-ots"
-          class="type-filter"
-          type="button"
-          data-state="neutral"
-          data-filter-label="オフィシャルトーナメントストア"
-        >
-          <span class="type-filter-name">オフィシャルトーナメントストア</span>
-          <span class="type-filter-state">未選択</span>
-        </button>
-        <button
-          id="filter-satellite"
-          class="type-filter"
-          type="button"
-          data-state="neutral"
-          data-filter-label="サテライトショップ"
-        >
-          <span class="type-filter-name">サテライトショップ</span>
-          <span class="type-filter-state">未選択</span>
-        </button>
-      </div>
-      <p class="filter-help">各ボタンは「未選択 → 選択 → 除外」の順で切り替わります。複数の条件はANDで適用されます。</p>
+      <button id="reset" type="button">表示をリセット</button>
     </div>
     <div id="status" class="status" aria-live="polite">読み込み中...</div>
   </header>
-  <button id="map-focus-exit" class="map-focus-exit" type="button" aria-label="全画面地図を終了">検索を表示</button>
   <main id="map" aria-label="OTS店舗地図"></main>
   <script src="config.js"></script>
   <script type="module">
-    const toolbarElement = document.querySelector('#toolbar');
-    const toolbarToggleElement = document.querySelector('#toolbar-toggle');
-    const mapFocusButtonElement = document.querySelector('#map-focus-button');
-    const mapFocusExitElement = document.querySelector('#map-focus-exit');
     const statusElement = document.querySelector('#status');
     const mapElement = document.querySelector('#map');
     const queryElement = document.querySelector('#query');
     const prefectureElement = document.querySelector('#prefecture');
     const resetElement = document.querySelector('#reset');
-    const officialFilterElement = document.querySelector('#filter-ots');
-    const satelliteFilterElement = document.querySelector('#filter-satellite');
     const config = window.OTS_MAP_CONFIG ?? {};
-    const TYPE_FILTER_STATES = Object.freeze(['neutral', 'include', 'exclude']);
-    const TYPE_FILTER_LABELS = Object.freeze({
-      neutral: '未選択',
-      include: '選択',
-      exclude: '除外'
-    });
-    const typeFilterState = {
-      officialTournamentStore: 'neutral',
-      satelliteShop: 'neutral'
-    };
-    let mapInstance = null;
-
-    toolbarToggleElement.addEventListener('click', () => {
-      const collapsed = toolbarElement.classList.toggle('is-collapsed');
-      const label = collapsed ? '検索バーを開く' : '検索バーを閉じる';
-
-      toolbarToggleElement.textContent = collapsed ? '∨' : '∧';
-      toolbarToggleElement.setAttribute('aria-expanded', String(!collapsed));
-      toolbarToggleElement.setAttribute('aria-label', label);
-      toolbarToggleElement.title = label;
-      resizeMapPreservingCenter();
-    });
-
-    mapFocusButtonElement.addEventListener('click', () => {
-      setMapFocusMode(true);
-    });
-
-    mapFocusExitElement.addEventListener('click', () => {
-      setMapFocusMode(false);
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && document.body.classList.contains('map-focus-mode')) {
-        setMapFocusMode(false);
-      }
-    });
-
-    // 厚生労働省「都道府県番号」の01〜47順
-    const PREFECTURE_ORDER = Object.freeze([
-      '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
-      '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
-      '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県',
-      '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
-      '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県',
-      '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県',
-      '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'
-    ]);
-    const PREFECTURE_RANK = new Map(
-      PREFECTURE_ORDER.map((prefecture, index) => [prefecture, index])
-    );
 
     if (!config.googleMapsApiKey || config.googleMapsApiKey === 'YOUR_BROWSER_API_KEY') {
       fail('docs/config.js にGoogle Maps JavaScript APIのブラウザキーを設定してください。');
@@ -632,10 +74,8 @@
         zoom: 5,
         mapId: config.mapId || 'DEMO_MAP_ID',
         streetViewControl: false,
-        fullscreenControl: false,
-        gestureHandling: window.matchMedia('(max-width: 680px)').matches ? 'greedy' : 'auto'
+        fullscreenControl: true
       });
-      mapInstance = map;
       const infoWindow = new InfoWindow();
       const stores = Array.isArray(dataset.stores) ? dataset.stores : [];
       const markers = stores.map((store) => {
@@ -651,14 +91,7 @@
         return { marker, store };
       });
 
-      const prefectures = [...new Set(
-        stores.map((store) => store.prefecture).filter(Boolean)
-      )].sort((a, b) => {
-        const rankDifference =
-          (PREFECTURE_RANK.get(a) ?? Number.MAX_SAFE_INTEGER) -
-          (PREFECTURE_RANK.get(b) ?? Number.MAX_SAFE_INTEGER);
-        return rankDifference || a.localeCompare(b, 'ja');
-      });
+      const prefectures = [...new Set(stores.map((store) => store.prefecture).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
       for (const prefecture of prefectures) {
         const option = document.createElement('option');
         option.value = prefecture;
@@ -671,22 +104,9 @@
         const prefecture = prefectureElement.value;
         const bounds = new google.maps.LatLngBounds();
         let visible = 0;
-        infoWindow.close();
-
         for (const item of markers) {
           const haystack = normalize(`${item.store.name} ${item.store.address} ${item.store.storeId}`);
-          const matchesText = !query || haystack.includes(query);
-          const matchesPrefecture = !prefecture || item.store.prefecture === prefecture;
-          const matchesOfficial = matchesTypeFilter(
-            hasStoreType(item.store, 'officialTournamentStore'),
-            typeFilterState.officialTournamentStore
-          );
-          const matchesSatellite = matchesTypeFilter(
-            hasStoreType(item.store, 'satelliteShop'),
-            typeFilterState.satelliteShop
-          );
-          const show = matchesText && matchesPrefecture && matchesOfficial && matchesSatellite;
-
+          const show = (!query || haystack.includes(query)) && (!prefecture || item.store.prefecture === prefecture);
           item.marker.map = show ? map : null;
           if (show) {
             bounds.extend(item.marker.position);
@@ -705,95 +125,23 @@
 
       queryElement.addEventListener('input', applyFilter);
       prefectureElement.addEventListener('change', applyFilter);
-      bindTypeFilter(officialFilterElement, 'officialTournamentStore', applyFilter);
-      bindTypeFilter(satelliteFilterElement, 'satelliteShop', applyFilter);
       resetElement.addEventListener('click', () => {
         queryElement.value = '';
         prefectureElement.value = '';
-        typeFilterState.officialTournamentStore = 'neutral';
-        typeFilterState.satelliteShop = 'neutral';
-        renderTypeFilter(officialFilterElement, 'neutral');
-        renderTypeFilter(satelliteFilterElement, 'neutral');
         applyFilter();
       });
-      renderTypeFilter(officialFilterElement, typeFilterState.officialTournamentStore);
-      renderTypeFilter(satelliteFilterElement, typeFilterState.satelliteShop);
       applyFilter();
     }
 
     function infoHtml(store) {
       const mapQuery = encodeURIComponent(store.address || store.name || '');
-      const badges = storeBadgesHtml(store);
       return `<div class="info">
         <h2>${escapeHtml(store.name || store.storeId)}</h2>
-        ${badges}
         ${store.address ? `<p>${escapeHtml(store.address)}</p>` : ''}
         ${store.phone ? `<p>電話: ${escapeHtml(store.phone)}</p>` : ''}
         <p><a href="https://www.google.com/maps/search/?api=1&query=${mapQuery}" target="_blank" rel="noopener">Google マップで開く</a></p>
         ${store.officialUrl ? `<p><a href="${escapeAttribute(store.officialUrl)}" target="_blank" rel="noopener">KONAMI店舗詳細</a></p>` : ''}
       </div>`;
-    }
-
-    function storeBadgesHtml(store) {
-      const badges = [];
-      if (hasStoreType(store, 'officialTournamentStore')) {
-        badges.push(`<span class="store-badge store-badge--ots"><span class="store-badge-icon" aria-hidden="true">OTS</span>オフィシャルトーナメントストア</span>`);
-      }
-      if (hasStoreType(store, 'satelliteShop')) {
-        badges.push(`<span class="store-badge store-badge--satellite"><span class="store-badge-icon" aria-hidden="true">SS</span>サテライトショップ</span>`);
-      }
-      return badges.length ? `<div class="store-badges">${badges.join('')}</div>` : '';
-    }
-
-    function hasStoreType(store, type) {
-      const storeTypes = Array.isArray(store.storeTypes) ? store.storeTypes : [];
-      if (type === 'officialTournamentStore') {
-        return store.isOfficialTournamentStore === true || storeTypes.includes(type);
-      }
-      if (type === 'satelliteShop') {
-        return store.isSatelliteShop === true || storeTypes.includes(type);
-      }
-      return storeTypes.includes(type);
-    }
-
-    function matchesTypeFilter(hasType, state) {
-      if (state === 'include') return hasType;
-      if (state === 'exclude') return !hasType;
-      return true;
-    }
-
-    function bindTypeFilter(element, key, applyFilter) {
-      element.addEventListener('click', () => {
-        const currentIndex = TYPE_FILTER_STATES.indexOf(typeFilterState[key]);
-        const nextState = TYPE_FILTER_STATES[(currentIndex + 1) % TYPE_FILTER_STATES.length];
-        typeFilterState[key] = nextState;
-        renderTypeFilter(element, nextState);
-        applyFilter();
-      });
-    }
-
-    function renderTypeFilter(element, state) {
-      const label = element.dataset.filterLabel || '';
-      const stateLabel = TYPE_FILTER_LABELS[state] || TYPE_FILTER_LABELS.neutral;
-      element.dataset.state = state;
-      element.querySelector('.type-filter-state').textContent = stateLabel;
-      element.setAttribute('aria-label', `${label}: ${stateLabel}`);
-      element.title = `${label}: ${stateLabel}。押すと次の状態へ切り替わります。`;
-    }
-
-    function setMapFocusMode(enabled) {
-      document.body.classList.toggle('map-focus-mode', enabled);
-      mapFocusButtonElement.setAttribute('aria-pressed', String(enabled));
-      resizeMapPreservingCenter();
-    }
-
-    function resizeMapPreservingCenter() {
-      requestAnimationFrame(() => {
-        if (!mapInstance || !window.google?.maps) return;
-        const center = mapInstance.getCenter();
-        google.maps.event.trigger(mapInstance, 'resize');
-        if (center) mapInstance.setCenter(center);
-      });
     }
 
     function normalize(value) {
