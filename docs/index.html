@@ -590,6 +590,40 @@
       margin-top: auto;
     }
 
+    .site-notice {
+      flex: none;
+      margin: 2px 0 4px;
+      border: 1px solid #d5a72e;
+      border-radius: 10px;
+      padding: 10px 11px;
+      background: #fff8df;
+      color: #493a12;
+      font-size: .76rem;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .site-notice strong {
+      display: block;
+      margin-bottom: 3px;
+      font-size: .82rem;
+    }
+
+    .site-notice p {
+      margin: 0;
+    }
+
+    .site-notice p + p {
+      margin-top: 5px;
+    }
+
+    .site-notice a {
+      color: #0b57d0;
+      font-weight: 650;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
     .status {
       flex: none;
       margin-top: 10px;
@@ -734,6 +768,16 @@
         touch-action: pan-y;
       }
 
+      .site-notice {
+        margin: 0 0 8px;
+        padding: 9px 10px;
+        font-size: .72rem;
+      }
+
+      #toolbar[data-sheet-state="collapsed"] .site-notice {
+        display: none;
+      }
+
       .status {
         flex: none;
         margin-top: 0;
@@ -781,6 +825,16 @@
         color: #c2c8d2;
       }
 
+      .site-notice {
+        border-color: #a8842c;
+        background: #332b16;
+        color: #f2e6bd;
+      }
+
+      .site-notice a {
+        color: #8ab4f8;
+      }
+
       .status {
         border-color: #343944;
       }
@@ -826,6 +880,11 @@
         >∧</button>
       </div>
     </div>
+    <aside class="site-notice" aria-label="非公式サイトについての注記">
+      <strong>非公式サイトです</strong>
+      <p>このページは個人が作成した非公式のマップであり、株式会社コナミデジタルエンタテインメントおよび遊戯王カードゲームの公式サービスではありません。掲載内容に誤りや更新の遅れが生じる場合があります。</p>
+      <p>情報源：<a href="https://cardgame-network.konami.net/store_search" target="_blank" rel="noopener noreferrer">https://cardgame-network.konami.net/store_search</a></p>
+    </aside>
     <div id="map-controls" class="controls">
       <label class="control-field">
         <span class="control-label">店舗名・住所</span>
