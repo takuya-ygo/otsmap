@@ -3,7 +3,7 @@
     "latitude": null,
     "longitude": null,
     "status": "REQUEST_DENIED",
-    "checkedAt": "2026-07-31T19:56:13.078Z",
+    "checkedAt": "2026-08-01T08:40:42.623Z",
     "source": "Google Geocoding API"
   },
   "419-0124 静岡県田方郡函南町塚本143-1 TSUTAYA 函南店": {
@@ -31,7 +31,7 @@
     "latitude": null,
     "longitude": null,
     "status": "REQUEST_DENIED",
-    "checkedAt": "2026-07-31T19:56:13.235Z",
+    "checkedAt": "2026-08-01T08:40:42.820Z",
     "source": "Google Geocoding API"
   }
 }
